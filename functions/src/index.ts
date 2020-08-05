@@ -416,9 +416,47 @@ app.get('/quizzes', asyncHandler(async (request, response, next) => {
  }
 */
 app.post('/users/:userId/quizes/:quizId', asyncHandler(async (request, response, next) => {
-    // @TODO: IMPLEMENT ME
+    const userId = request.params.userId;
+    const quizId = request.params.quizId;
 
-    response.json('IMPLEMENT ME')
+    const userDoc = await usersColl.doc(userId);
+    const quizDoc = await quizzesColl.doc(quizId);
+
+    const user = await userDoc.get();
+    const quiz = await quizDoc.get();
+    if (!user.exists) {
+        const error = new HttpException(404, 'User not found');
+        return next(error);
+    }
+    if (!quiz.exists) {
+        const error = new HttpException(404, 'Quiz not found');
+        return next(error);
+    }
+    const userQuizIds = user.data()!.quizIds;
+    const userCount = quiz.data()!.userCount;
+    if (!userQuizIds.includes(quizId)) {
+        await Firestore.runTransaction(async t => {
+            userQuizIds.push(quizId);
+            t.update(quizDoc, { userCount: userCount + 1 });
+            t.update(userDoc, { quizIds: userQuizIds });
+        });
+        response.json({
+            quiz: {
+                id: quiz.id,
+                ...quiz.data(),
+                userCount: userCount + 1
+            },
+            user: {
+                id: user.id,
+                ...user.data(),
+                quizIds: userQuizIds
+            }
+        });
+    } else {
+        response.json({
+            message: 'Quiz already added'
+        });
+    }
 }));
 app.use(errorHandler);
 
