@@ -6,9 +6,10 @@ import express from 'express'
 import * as admin from 'firebase-admin'
 
 import { asyncHandler, buildValidator } from './middleware'
-import { addUserSchema, getUserSchema } from './schema/user.schema';
+import { addUserSchema } from './schema/user.schema';
 import { errorHandler } from './errors';
 import { HttpException } from './http.exception';
+import { addQuizSchema, updateQuizSchema } from './schema/quizes.schema';
 
 
 // // Start writing Firebase Functions
@@ -96,11 +97,12 @@ app.post('/users',
             ...request.body,
             quizIds: []
         };
-        const userData = await usersColl.add(user);
+        const res = await usersColl.add(user);
+        const userData = await res.get();
         response.json({
             user: {
                 id: userData.id,
-                ...user
+                ...userData.data()
             }
         });
     }));
@@ -124,7 +126,6 @@ app.post('/users',
  * 
  */
 app.get('/users/:userId',
-    buildValidator(getUserSchema, 'params'),
     asyncHandler(async (request, response, next) => {
 
         const userId = request.params.userId;
@@ -162,7 +163,6 @@ app.get('/users/:userId',
 *
 */
 app.delete('/users/:userId',
-    buildValidator(getUserSchema, 'params'),
     asyncHandler(async (request, response, next) => {
         const userId = request.params.userId;
         const user = await usersColl.doc(userId).get();
@@ -180,8 +180,6 @@ app.delete('/users/:userId',
             const error = new HttpException(404, 'User not found');
             next(error);
         }
-
-        response.json('IMPLEMENT ME')
     }));
 
 
@@ -224,12 +222,23 @@ app.delete('/users/:userId',
  * 
  */
 app.post('/quizzes',
+    buildValidator(addQuizSchema),
     asyncHandler(async (request, response, next) => {
+        const quiz = {
+            ...request.body,
+            userCount:0,
+            createdOn: admin.firestore.FieldValue.serverTimestamp()
+        };
+        const res = await quizzesColl.add(quiz);
+        const addedQuiz = await res.get();
 
-        // @TODO: IMPLEMENT ME
-
-        response.json('IMPLEMENT ME')
-    }))
+        response.json({
+            quiz:{
+                id:addedQuiz.id,
+                ...addedQuiz.data()
+            }
+        })
+    }));
 
 
 /*
@@ -254,13 +263,26 @@ app.post('/quizzes',
  * }
  * 
  */
+
+// Should be a PUT request
 app.post('/quizzes/:quizId',
+    buildValidator(updateQuizSchema),
     asyncHandler(async (request, response, next) => {
-
-        // @TODO: IMPLEMENT ME
-
-        response.json('IMPLEMENT ME')
-    }))
+        const quizId = request.params.quizId;
+        const quiz = await quizzesColl.doc(quizId).get();
+        if(quiz.exists) {
+            await quizzesColl.doc(quizId).update({...request.body});
+            response.json({
+                quiz : {
+                    ...quiz.data(),
+                    ...request.body
+                }
+            })
+        } else {
+            const error = new HttpException(404, 'Quiz not found');
+            next(error);
+        }
+    }));
 
 /*
  * get an individual quiz
@@ -277,10 +299,22 @@ app.post('/quizzes/:quizId',
  * }
  */
 app.get('/quizzes/:quizId', asyncHandler(async (request, response, next) => {
-    // @TODO: IMPLEMENT ME
-
-    response.json('IMPLEMENT ME')
-}))
+    const quizId = request.params.quizId;
+    const quiz = await quizzesColl.doc(quizId).get();
+    if (quiz.exists) {
+        response.json(
+            {
+                quiz: {
+                    id: quizId,
+                    ...quiz.data()
+                }
+            }
+        );
+    } else {
+        const error = new HttpException(404, 'Quiz not found');
+        next(error);
+    }
+}));
 
 /*
  * delete an individual quiz
