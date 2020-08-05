@@ -6,7 +6,9 @@ import express from 'express'
 import * as admin from 'firebase-admin'
 
 import { asyncHandler, buildValidator } from './middleware'
-import addUserSchema from './schema/add-user.schema';
+import { addUserSchema, getUserSchema } from './schema/user.schema';
+import { errorHandler } from './errors';
+import { HttpException } from './http.exception';
 
 
 // // Start writing Firebase Functions
@@ -122,12 +124,25 @@ app.post('/users',
  * 
  */
 app.get('/users/:userId',
+    buildValidator(getUserSchema, 'params'),
     asyncHandler(async (request, response, next) => {
 
-        // @TODO: IMPLEMENT ME
-
-        response.json('IMPLEMENT ME')
-    }))
+        const userId = request.params.userId;
+        const user = await usersColl.doc(userId).get();
+        if(user.exists) {
+            response.json(
+                {
+                    user: {
+                        id: userId,
+                        ...user.data()
+                    }
+                }
+            )
+        } else {
+            const error = new HttpException(404, 'User not found');
+            next(error);
+        }
+    }));
 
 /*
 * delete a user
@@ -336,7 +351,9 @@ app.post('/users/:userId/quizes/:quizId', asyncHandler(async (request, response,
     // @TODO: IMPLEMENT ME
 
     response.json('IMPLEMENT ME')
-}))
+}));
+app.use(errorHandler);
+
 
 // Expose Express API as a single Cloud Function:
 exports.api = functions.https.onRequest(app);
