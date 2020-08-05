@@ -1,7 +1,7 @@
 import * as functions from 'firebase-functions';
 
 import * as bodyParser from 'body-parser';
-import express from 'express'
+import express, { Request, Response, NextFunction } from 'express'
 
 import * as admin from 'firebase-admin'
 
@@ -22,7 +22,7 @@ const Firestore = admin.firestore();
 const app = express();
 app.use(bodyParser.json());
 
-app.get('/', asyncHandler(async (request, response, next) => {
+app.get('/', asyncHandler(async (request: Request, response: Response, next: NextFunction) => {
     response.send('alive 💪')
 }));
 
@@ -92,7 +92,7 @@ const quizzesColl = Firestore.collection('quizzes');
  */
 app.post('/users',
     buildValidator(addUserSchema),
-    asyncHandler(async (request, response, next) => {
+    asyncHandler(async (request: Request, response: Response, next: NextFunction) => {
         const user = {
             ...request.body,
             quizIds: []
@@ -126,7 +126,7 @@ app.post('/users',
  * 
  */
 app.get('/users/:userId',
-    asyncHandler(async (request, response, next) => {
+    asyncHandler(async (request: Request, response: Response, next: NextFunction) => {
 
         const userId = request.params.userId;
         const user = await usersColl.doc(userId).get();
@@ -163,7 +163,7 @@ app.get('/users/:userId',
 *
 */
 app.delete('/users/:userId',
-    asyncHandler(async (request, response, next) => {
+    asyncHandler(async (request: Request, response: Response, next: NextFunction) => {
         const userId = request.params.userId;
         const doc = await usersColl.doc(userId);
         const user = await doc.get();
@@ -224,7 +224,7 @@ app.delete('/users/:userId',
  */
 app.post('/quizzes',
     buildValidator(addQuizSchema),
-    asyncHandler(async (request, response, next) => {
+    asyncHandler(async (request: Request, response: Response, next: NextFunction) => {
         const quiz = {
             ...request.body,
             userCount: 0,
@@ -268,7 +268,7 @@ app.post('/quizzes',
 // Should be a PUT request
 app.post('/quizzes/:quizId',
     buildValidator(updateQuizSchema),
-    asyncHandler(async (request, response, next) => {
+    asyncHandler(async (request: Request, response: Response, next: NextFunction) => {
         const quizId = request.params.quizId;
         const doc = await quizzesColl.doc(quizId);
         const quiz = await doc.get();
@@ -276,6 +276,7 @@ app.post('/quizzes/:quizId',
             await doc.update({ ...request.body });
             response.json({
                 quiz: {
+                    id: quiz.id,
                     ...quiz.data(),
                     ...request.body
                 }
@@ -300,7 +301,7 @@ app.post('/quizzes/:quizId',
  *   }
  * }
  */
-app.get('/quizzes/:quizId', asyncHandler(async (request, response, next) => {
+app.get('/quizzes/:quizId', asyncHandler(async (request: Request, response: Response, next: NextFunction) => {
     const quizId = request.params.quizId;
     const quiz = await quizzesColl.doc(quizId).get();
     if (quiz.exists) {
@@ -332,7 +333,7 @@ app.get('/quizzes/:quizId', asyncHandler(async (request, response, next) => {
  *   }
  * }
  */
-app.delete('/quizzes/:quizId', asyncHandler(async (request, response, next) => {
+app.delete('/quizzes/:quizId', asyncHandler(async (request: Request, response: Response, next: NextFunction) => {
     const quizId = request.params.quizId;
     const doc = await quizzesColl.doc(quizId);
     const quiz = await doc.get();
@@ -369,9 +370,14 @@ app.delete('/quizzes/:quizId', asyncHandler(async (request, response, next) => {
  * }
  * 
  */
-app.get('/quizzes', asyncHandler(async (request, response, next) => {
+app.get('/quizzes', asyncHandler(async (request: Request, response: Response, next: NextFunction) => {
     const quizesData = await quizzesColl.orderBy('createdOn', 'desc').limit(10).get();
-    const quizes = quizesData.docs.map(q => q.data());
+    const quizes = quizesData.docs.map(q => {
+        return {
+            id: q.id,
+            ...q.data()
+        }
+    });
     response.json({
         quizes
     });
@@ -415,7 +421,7 @@ app.get('/quizzes', asyncHandler(async (request, response, next) => {
      }
  }
 */
-app.post('/users/:userId/quizes/:quizId', asyncHandler(async (request, response, next) => {
+app.post('/users/:userId/quizes/:quizId', asyncHandler(async (request: Request, response: Response, next: NextFunction) => {
     const userId = request.params.userId;
     const quizId = request.params.quizId;
 
