@@ -1,27 +1,27 @@
 import * as functions from 'firebase-functions';
 
-import * as bodyParser from "body-parser";
-import * as express from "express"
+import * as bodyParser from 'body-parser';
+import express from 'express'
 
-import * as admin from "firebase-admin"
+import * as admin from 'firebase-admin'
 
-import { asyncHandler, buildValidator } from "./middleware"
-import Joi = require('@hapi/joi');
+import { asyncHandler, buildValidator } from './middleware'
+import addUserSchema from './schema/add-user.schema';
 
 
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
 //
 
-admin.initializeApp()
-const Firestore = admin.firestore()
+admin.initializeApp();
+const Firestore = admin.firestore();
 
 const app = express();
 app.use(bodyParser.json());
 
-app.get("/", asyncHandler( async (request, response, next) => { 
-  response.send("alive 💪")
-}))
+app.get('/', asyncHandler(async (request, response, next) => {
+    response.send('alive 💪')
+}));
 
 /*
  *
@@ -57,8 +57,8 @@ app.get("/", asyncHandler( async (request, response, next) => {
  *       userCount: number  -> private counter, should never be settable
  *     }
 */
-const usersColl = Firestore.collection("users")
-const quizzesColl = Firestore.collection("quizzes")
+const usersColl = Firestore.collection('users');
+const quizzesColl = Firestore.collection('quizzes');
 
 /*
  * create a user
@@ -87,13 +87,21 @@ const quizzesColl = Firestore.collection("quizzes")
  * }
  * 
  */
-app.post("/users", 
-  asyncHandler( async (request, response, next) => { 
-
-  // @TODO: IMPLEMENT ME
-
-  response.json("IMPLEMENT ME")
-}))
+app.post('/users',
+    buildValidator(addUserSchema),
+    asyncHandler(async (request, response, next) => {
+        const user = {
+            ...request.body,
+            quizIds: []
+        };
+        const userData = await usersColl.add(user);
+        response.json({
+            user: {
+                id: userData.id,
+                ...user
+            }
+        });
+    }));
 
 /*
  * get a user
@@ -113,36 +121,36 @@ app.post("/users",
  * }
  * 
  */
-app.get("/users/:userId", 
-  asyncHandler( async (request, response, next) => { 
+app.get('/users/:userId',
+    asyncHandler(async (request, response, next) => {
 
-  // @TODO: IMPLEMENT ME
+        // @TODO: IMPLEMENT ME
 
-  response.json("IMPLEMENT ME")
-}))
+        response.json('IMPLEMENT ME')
+    }))
 
- /*
- * delete a user
- * 
- * ROUTE: 
- *   POST /users
- * 
- * EXPECTED RESPONSE: -> The values of the object that was deleted
- * JSON
- * {
- *   "user": {
- *     "id": "uAWoWFpknToBcdZ7GF59",
- *     "quizIds": [],
- *     "name": "Bob Builder"
- *   }
- * }
- * 
- */
-app.delete("/users/:userId", asyncHandler( async (request, response, next) => { 
+/*
+* delete a user
+*
+* ROUTE:
+*   POST /users
+*
+* EXPECTED RESPONSE: -> The values of the object that was deleted
+* JSON
+* {
+*   "user": {
+*     "id": "uAWoWFpknToBcdZ7GF59",
+*     "quizIds": [],
+*     "name": "Bob Builder"
+*   }
+* }
+*
+*/
+app.delete('/users/:userId', asyncHandler(async (request, response, next) => {
 
-  // @TODO: IMPLEMENT ME
+    // @TODO: IMPLEMENT ME
 
-  response.json("IMPLEMENT ME")
+    response.json('IMPLEMENT ME')
 }))
 
 
@@ -184,13 +192,13 @@ app.delete("/users/:userId", asyncHandler( async (request, response, next) => {
  *  `admin.firestore.FieldValue.serverTimestamp()`, that will use the server timestamp
  * 
  */
-app.post("/quizzes", 
-  asyncHandler( async (request, response, next) => { 
+app.post('/quizzes',
+    asyncHandler(async (request, response, next) => {
 
-  // @TODO: IMPLEMENT ME
+        // @TODO: IMPLEMENT ME
 
-  response.json("IMPLEMENT ME")
-}))
+        response.json('IMPLEMENT ME')
+    }))
 
 
 /*
@@ -215,13 +223,13 @@ app.post("/quizzes",
  * }
  * 
  */
-app.post("/quizzes/:quizId", 
-  asyncHandler( async (request, response, next) => { 
+app.post('/quizzes/:quizId',
+    asyncHandler(async (request, response, next) => {
 
-  // @TODO: IMPLEMENT ME
+        // @TODO: IMPLEMENT ME
 
-  response.json("IMPLEMENT ME")
-}))
+        response.json('IMPLEMENT ME')
+    }))
 
 /*
  * get an individual quiz
@@ -237,10 +245,10 @@ app.post("/quizzes/:quizId",
  *   }
  * }
  */
-app.get("/quizzes/:quizId", asyncHandler( async (request, response, next) => { 
-  // @TODO: IMPLEMENT ME
+app.get('/quizzes/:quizId', asyncHandler(async (request, response, next) => {
+    // @TODO: IMPLEMENT ME
 
-  response.json("IMPLEMENT ME")
+    response.json('IMPLEMENT ME')
 }))
 
 /*
@@ -257,10 +265,10 @@ app.get("/quizzes/:quizId", asyncHandler( async (request, response, next) => {
  *   }
  * }
  */
-app.delete("/quizzes/:quizId", asyncHandler( async (request, response, next) => { 
-  // @TODO: IMPLEMENT ME
+app.delete('/quizzes/:quizId', asyncHandler(async (request, response, next) => {
+    // @TODO: IMPLEMENT ME
 
-  response.json("IMPLEMENT ME")
+    response.json('IMPLEMENT ME')
 }))
 
 /*
@@ -280,54 +288,54 @@ app.delete("/quizzes/:quizId", asyncHandler( async (request, response, next) => 
  * }
  * 
  */
-app.get("/quizzes", asyncHandler( async (request, response, next) => { 
-  // @TODO: IMPLEMENT ME
+app.get('/quizzes', asyncHandler(async (request, response, next) => {
+    // @TODO: IMPLEMENT ME
 
-  response.json("IMPLEMENT ME")
+    response.json('IMPLEMENT ME')
 }))
 
- /*
- * add a users to a quiz
- *
- * 
- * Should append the quiz id to the array of quizes on the user object in the database
- * Should increment the `userCount` on the quiz object 
- *   - if the user is already part of the quiz, do not imcrement
- * Both operations should be done in a Firestore transaction
- * 
- * ROUTE: 
- *   POST /users/:userId/quizes/:quizId
- * 
- * expected JSON body:
- * {} // blank body
- * 
- * EXPECTED RESPONSE:
- * JSON
-  {
-      "quiz": {
-          "id": "KltYLDxCbP5lX6BHWY9l",
-          "description": "this is a quiz to do something",
-          "active": false,
-          "name": "Quiz 2",
-          "createdOn": {
-              "_seconds": 1595465567,
-              "_nanoseconds": 643000000
-          },
-          "userCount": 1
-      },
-      "user": {
-          "id": "uAWoWFpknToBcdZ7GF59",
-          "name": "Bob Builder",
-          "quizIds": [
-              "KltYLDxCbP5lX6BHWY9l"
-          ]
-      }
-  }
- */
-app.post("/users/:userId/quizes/:quizId", asyncHandler( async (request, response, next) => { 
-  // @TODO: IMPLEMENT ME
+/*
+* add a users to a quiz
+*
+*
+* Should append the quiz id to the array of quizes on the user object in the database
+* Should increment the `userCount` on the quiz object
+*   - if the user is already part of the quiz, do not imcrement
+* Both operations should be done in a Firestore transaction
+*
+* ROUTE:
+*   POST /users/:userId/quizes/:quizId
+*
+* expected JSON body:
+* {} // blank body
+*
+* EXPECTED RESPONSE:
+* JSON
+ {
+     "quiz": {
+         "id": "KltYLDxCbP5lX6BHWY9l",
+         "description": "this is a quiz to do something",
+         "active": false,
+         "name": "Quiz 2",
+         "createdOn": {
+             "_seconds": 1595465567,
+             "_nanoseconds": 643000000
+         },
+         "userCount": 1
+     },
+     "user": {
+         "id": "uAWoWFpknToBcdZ7GF59",
+         "name": "Bob Builder",
+         "quizIds": [
+             "KltYLDxCbP5lX6BHWY9l"
+         ]
+     }
+ }
+*/
+app.post('/users/:userId/quizes/:quizId', asyncHandler(async (request, response, next) => {
+    // @TODO: IMPLEMENT ME
 
-  response.json("IMPLEMENT ME")
+    response.json('IMPLEMENT ME')
 }))
 
 // Expose Express API as a single Cloud Function:
