@@ -129,7 +129,7 @@ app.get('/users/:userId',
 
         const userId = request.params.userId;
         const user = await usersColl.doc(userId).get();
-        if(user.exists) {
+        if (user.exists) {
             response.json(
                 {
                     user: {
@@ -137,7 +137,7 @@ app.get('/users/:userId',
                         ...user.data()
                     }
                 }
-            )
+            );
         } else {
             const error = new HttpException(404, 'User not found');
             next(error);
@@ -161,12 +161,28 @@ app.get('/users/:userId',
 * }
 *
 */
-app.delete('/users/:userId', asyncHandler(async (request, response, next) => {
+app.delete('/users/:userId',
+    buildValidator(getUserSchema, 'params'),
+    asyncHandler(async (request, response, next) => {
+        const userId = request.params.userId;
+        const user = await usersColl.doc(userId).get();
+        if (user.exists) {
+            await usersColl.doc(userId).delete();
+            response.json(
+                {
+                    user: {
+                        id: userId,
+                        ...user.data()
+                    }
+                }
+            );
+        } else {
+            const error = new HttpException(404, 'User not found');
+            next(error);
+        }
 
-    // @TODO: IMPLEMENT ME
-
-    response.json('IMPLEMENT ME')
-}))
+        response.json('IMPLEMENT ME')
+    }));
 
 
 /*
