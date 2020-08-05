@@ -165,9 +165,10 @@ app.get('/users/:userId',
 app.delete('/users/:userId',
     asyncHandler(async (request, response, next) => {
         const userId = request.params.userId;
-        const user = await usersColl.doc(userId).get();
+        const doc = await usersColl.doc(userId);
+        const user = await doc.get();
         if (user.exists) {
-            await usersColl.doc(userId).delete();
+            await doc.delete();
             response.json(
                 {
                     user: {
@@ -269,9 +270,10 @@ app.post('/quizzes/:quizId',
     buildValidator(updateQuizSchema),
     asyncHandler(async (request, response, next) => {
         const quizId = request.params.quizId;
-        const quiz = await quizzesColl.doc(quizId).get();
+        const doc = await quizzesColl.doc(quizId);
+        const quiz = await doc.get();
         if(quiz.exists) {
-            await quizzesColl.doc(quizId).update({...request.body});
+            await doc.update({...request.body});
             response.json({
                 quiz : {
                     ...quiz.data(),
@@ -331,10 +333,24 @@ app.get('/quizzes/:quizId', asyncHandler(async (request, response, next) => {
  * }
  */
 app.delete('/quizzes/:quizId', asyncHandler(async (request, response, next) => {
-    // @TODO: IMPLEMENT ME
-
-    response.json('IMPLEMENT ME')
-}))
+    const quizId = request.params.quizId;
+    const doc = await quizzesColl.doc(quizId);
+    const quiz = await doc.get();
+    if (quiz.exists) {
+        await doc.delete();
+        response.json(
+            {
+                quiz: {
+                    id: quizId,
+                    ...quiz.data()
+                }
+            }
+        );
+    } else {
+        const error = new HttpException(404, 'Quiz not found');
+        next(error);
+    }
+}));
 
 /*
  * list latest 10 quizzes (ignore pagination)
