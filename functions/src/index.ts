@@ -227,15 +227,15 @@ app.post('/quizzes',
     asyncHandler(async (request, response, next) => {
         const quiz = {
             ...request.body,
-            userCount:0,
+            userCount: 0,
             createdOn: admin.firestore.FieldValue.serverTimestamp()
         };
         const res = await quizzesColl.add(quiz);
         const addedQuiz = await res.get();
 
         response.json({
-            quiz:{
-                id:addedQuiz.id,
+            quiz: {
+                id: addedQuiz.id,
                 ...addedQuiz.data()
             }
         })
@@ -272,10 +272,10 @@ app.post('/quizzes/:quizId',
         const quizId = request.params.quizId;
         const doc = await quizzesColl.doc(quizId);
         const quiz = await doc.get();
-        if(quiz.exists) {
-            await doc.update({...request.body});
+        if (quiz.exists) {
+            await doc.update({ ...request.body });
             response.json({
-                quiz : {
+                quiz: {
                     ...quiz.data(),
                     ...request.body
                 }
@@ -370,10 +370,12 @@ app.delete('/quizzes/:quizId', asyncHandler(async (request, response, next) => {
  * 
  */
 app.get('/quizzes', asyncHandler(async (request, response, next) => {
-    // @TODO: IMPLEMENT ME
-
-    response.json('IMPLEMENT ME')
-}))
+    const quizesData = await quizzesColl.orderBy('createdOn', 'desc').limit(10).get();
+    const quizes = quizesData.docs.map(q => q.data());
+    response.json({
+        quizes
+    });
+}));
 
 /*
 * add a users to a quiz
